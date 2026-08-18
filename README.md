@@ -1,10 +1,10 @@
-# MitochondrialMorphology
-FIJI (ImageJ) Macros to obtain Mito Morphology measurements. The macro is split into two parts. Part 1 makes mitochondrial images binary, and part 2 extracts area/perimeter/branch point etc measurements from each mitochondria and saaves each imag results as a csv.
+# Mitochondrial Morphology
+FIJI (ImageJ) Macros to obtain Mito Morphology measurements. The macro is split into two parts. Part 1 makes mitochondrial images binary, and part 2 extracts area/perimeter/branch point etc measurements from each mitochondria and saves each image's results as a csv.
 
 ## How It Works
 
 1. **Folder of TIFF Images**: All images need to be saved as a TIFF in a folder on your computer. To automatically convert .lif files to TIFF, see https://github.com/MarnieMaddock/Lif-to-Tif.
-2. **Add Adaptive Threshold Plugin**: Install Adaptive Threshold Plugin using instructions given here: https://sites.google.com/site/qingzongtseng/adaptivethreshold. Ensure when naming the plugin use adaptiveThr (check capitalisation)
+2. **Add Plugins**: Install Adaptive Threshold Plugin using the instructions given here: https://sites.google.com/site/qingzongtseng/adaptivethreshold. Ensure when naming the plugin use adaptiveThr (check capitalisation). Also install the Mitochondrial Analyzer plugin https://github.com/AhsenChaudhry/Mitochondria-Analyzer. Note, these plugins are only compatible with an older version of FIJI with Java 8, not the latest release (Java 21). Please download the `stable` version of FIJI with Java 8 https://imagej.net/software/fiji/downloads.
 3. **Open macro in FIJI**: Drag and MitoMorph_MakeBinary_Adaptive_1.ijm into the FIJI console.
 4. **Run**: Press Run on the macro.
 5. **Customise Analysis**: The macro will ask to select the folder containing TIFF images to be analysed. A pop-up box will appear to guide users into specifying the channels that correspond to the mitochondria. The macro will prompt the user to specify the pre-processing filters and settings they prefer. Use the thresholdOptimize function to optimise parameters.
