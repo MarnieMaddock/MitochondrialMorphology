@@ -16,6 +16,10 @@ FIJI (ImageJ) Macros to obtain Mito Morphology measurements. The macro is split 
 
 <img width="4651" height="5187" alt="mitomorph_methods" src="https://github.com/user-attachments/assets/8aa10009-2806-43e8-aae7-6dba05f2483d" />
 
+## Software Requirements
+FIJI/ImageJ with Java 8. The plugins required by the image-analysis pipeline are not currently compatible with the latest Java 21 release of FIJI. Download FIJI Stable Release. https://imagej.net/software/fiji/downloads 
+- Required Version: ImageJ 1.54p, Java 1.8.0_322 or 1.8.0_452 (64-bit)
+
 ## Threshold Optimisation - Before you Start
 
 Mitochondria are segmented from the calibrated .tif images using adaptive thresholding. As fluorescence intensity, background and signal-to-noise can vary between imaging datasets, the thresholding parameters should be optimised for each new dataset before batch segmentation. The 2D Threshold Optimize function in Mitochondria Analyzer allows different thresholding parameters to be tested and compared to identify those that best segment the mitochondria. 
