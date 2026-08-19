@@ -3,7 +3,7 @@
 // Author: Marnie L Maddock (University of Wollongong)
 // mmaddock@uow.edu.au, mlm715@uowmail.edu.au
 // 23.04.2026
-/* Copyright 2024 Marnie Maddock
+/* Copyright 2026 Marnie Maddock
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), 
 to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
@@ -15,39 +15,35 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
 WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * Instructions
- *  Use for .tif images
- *  Images that have no cells (all black for example, will have the error: No window with "Results" found. Remove this black image from the dataset.
-	Press run
-	
+ *  Use for .tif images. Press run
 */
 
+// Select the folder containing the original .tif images
 dir1 = getDirectory("Choose Source Directory of original images");
+// Create output folders
 resultsDir = dir1+"Binary_images/";
 File.makeDirectory(resultsDir);
 dir2 = resultsDir
-dir3 = resultsDir + "ThresholdPreview"
+dir3 = resultsDir + "ThresholdPreview/"
 File.makeDirectory(dir3);
-list2 = getFileList(dir2);
-
-
 
 
 // Ask user which channel is the mitochondrial channel
 Dialog.create("Mitochondria Channel");
-Dialog.addChoice("Select mito channel:", newArray("C1", "C2", "C3", "C4"), "C1");
+Dialog.addChoice("Select mito channel:", newArray("C1", "C2", "C3", "C4", "C5"), "C1");
 Dialog.show();
 mitoChoice = Dialog.getChoice();
 
-// Convert "C1" -> "1", "C2" -> "2", etc.
+// Extract the channel number from the selected channel (e.g. "C1" -> "1")
 mitoChannel = substring(mitoChoice, 1);
 
-// Function to set parameters using a dialog box
+// Allow the user to enter the optimised mitochondrial segmentation parameters
 function setParameters() {
     // Create a dialog to get user input
     Dialog.create("Set Parameters for 3D Threshold");
 
     // Add message with help text
-    Dialog.addMessage("Please go to the Mitochondrial Analyzer to find optimal parameters using Threshold Optimize.");
+    Dialog.addMessage("Enter the parameters identified using Mitochondria Analyzer > 2D > 2D Threshold Optimize.");
 
     // Add numeric fields for each parameter
     Dialog.addNumber("Rolling (microns)", 1.25);
@@ -57,7 +53,7 @@ function setParameters() {
     Dialog.addNumber("C-value", 4);
     Dialog.addNumber("Outlier radius (Pixels)", 0.5);
 
-// Add drop-down menu for method
+	// Add drop-down menu for method
     methods = newArray("Mean", "Median", "MidGrey", "[Weighted Mean]");
     Dialog.addChoice("Method", methods, "[Weighted Mean]");
     
@@ -72,14 +68,13 @@ function setParameters() {
     params[3] = Dialog.getNumber();
     params[4] = Dialog.getNumber();
     params[5] = Dialog.getNumber();
-     params[6] = Dialog.getChoice();
+    params[6] = Dialog.getChoice();
     
     return params;
 }
-//run("3D Threshold", "subtract rolling=1.25 sigma radius=0.50 adjust gamma=0.90 method=[Weighted Mean] 
-//block=2.05 c-value=4 despeckle remove fill outlier=0.5 show");
-// Function to apply 3D Threshold with the given parameters
-// Function to apply 3D Threshold with the given parameters
+
+// Apply the Mitochondria Analyzer 3D Threshold command
+// using the parameters selected by the user
 function apply3DThreshold(params) {
     command = "subtract rolling=" + params[0] + " sigma radius=" + params[1] + 
               " enhance max=1.40 scale_0=2.600 from=0.50 to=0.80" +
@@ -88,13 +83,13 @@ function apply3DThreshold(params) {
     run("3D Threshold", command);
 }
 
-// Set the parameters once
+// Ask the user to enter the optimised segmentation parameters once
+// These settings will then be applied to all images in the dataset
 parameters = setParameters();
-
 
 // Create log text
 logText = "";
-
+var logText = "";
 // Timestamp
 getDateAndTime(year, month, dayOfWeek, dayOfMonth, hour, minute, second, msec);
 logText += "Mitochondria Segmentation Macro Log\n";
@@ -114,82 +109,146 @@ logText += "C-value: " + parameters[4] + "\n";
 logText += "Outlier radius (pixels): " + parameters[5] + "\n";
 logText += "Method: " + parameters[6] + "\n\n";
 
-
+// Batch process all TIFF images in the selected source directory
 processFolder(dir1);
 
 logText += "\nProcessing complete.\n";
 
-
+// Save the processing log in the binary image output folder
 logFile = dir2 + "MitoSegmentation_Log.txt";
 File.saveString(logText, logFile);
 
 exit("Done");
 
-
+// Identify and process each TIFF image in the source directory
 function processFolder(dir1) {
     list = getFileList(dir1);
     list = Array.sort(list);
     for (i = 0; i < list.length; i++) {
-        if (endsWith(list[i], ".tif")) {
+    	fileLower = toLowerCase(list[i]);
+         if (endsWith(fileLower, ".tif") || endsWith(fileLower, ".tiff")) {
             processFile(dir1, dir2, list[i]);
         }
     }
 } 
 
 
-		
+// Process a single TIFF image		
 function processFile(dir1, dir2, file){
 	open(dir1 + File.separator + file);
 	print(dir1 + File.separator + file);
 	
-//Split channels and rename		
-		title = getTitle();
-		run("Split Channels");
- // Build expected mito channel window name, e.g. "C2-myimage.tif"
-    mitoWindow = "C" + mitoChannel + "-" + title;
+	// Record the original image title and dimensions	
+	title = getTitle();
+	getDimensions(width, height, channels, slices, frames);
+	
+	// Isolate the mitochondrial channel
+	if (channels > 1) {
 
-    // Select chosen mito channel and rename to Mito
-    if (isOpen(mitoWindow)) {
-        selectWindow(mitoWindow);
-        rename("Mito");
-    } else {
-        print("Could not find expected channel window: " + mitoWindow);
-        close("*");
+	    run("Split Channels");
+		// Build expected mito channel window name, e.g. "C2-myimage.tif"
+	    mitoWindow = "C" + mitoChannel + "-" + title;
+	
+		// Select chosen mito channel and rename to Mito
+	    if (isOpen(mitoWindow)) {
+	        selectWindow(mitoWindow);
+	        rename("Mito");
+	    } else {
+	        print("Could not find expected channel window: " + mitoWindow);
+	        close("*");
+	        return;
+	    }
+	
+	    // Close other channels
+	    for (c = 1; c <= channels; c++) {
+	        otherWindow = "C" + c + "-" + title;
+	        if (c != parseInt(mitoChannel) && isOpen(otherWindow)) {
+	            selectWindow(otherWindow);
+	            close();
+	        }
+	    }
+	
+	} else {
+	
+	    // Single-channel image: no splitting needed
+	    rename("Mito");
+	}
+
+	// Check if image is RGB, then convert to 8-bit
+	if (bitDepth() == 24) {
+	    run("8-bit");
+	}
+
+	 // Apply the user-defined mitochondrial segmentation parameters
+	apply3DThreshold(parameters);
+		
+	// Remove existing file extension
+	baseTitle = title;
+	
+	if (endsWith(baseTitle, ".tif")) {
+	    baseTitle = substring(baseTitle, 0, lengthOf(baseTitle) - 4);
+	} else if (endsWith(baseTitle, ".tiff")) {
+	    baseTitle = substring(baseTitle, 0, lengthOf(baseTitle) - 5);
+	}
+	
+	 // Save the original-versus-thresholded comparison image for quality control
+    if (isOpen("Mito thresholded_COMPARISON")) {
+        selectWindow("Mito thresholded_COMPARISON");
+        saveAs("TIFF", dir3 + "ThresholdPreview_" + baseTitle + ".tif");
+        close();
+    }
+    
+    // Close the original mitochondrial image once thresholding is complete
+    if (isOpen("Mito")) {
+        selectWindow("Mito");
+        close();
+    }
+
+
+    // Select the thresholded mitochondrial image
+    if (!isOpen("Mito thresholded")) {
+        print("WARNING: Thresholded image not generated for " + title);
+        logText += "FAILED: " + title +
+                   " - thresholded image not generated\n";
         return;
     }
+	selectWindow("Mito thresholded");
 
-    // Optional: close other channel windows after splitting
-    for (c = 1; c <= 4; c++) {
-        otherWindow = "C" + c + "-" + title;
-        if (c != parseInt(mitoChannel) && isOpen(otherWindow)) {
-            selectWindow(otherWindow);
-            close();
-        }
-    }
-
-		selectWindow("Mito");
-		// Create a dialog to get user input
-
-// Run the command
-//run("3D Threshold", command);
-apply3DThreshold(parameters);
-		//run("3D Threshold", "subtract rolling=1.25 sigma radius=0.50 enhance max=1.40 scale_0=2.600 from=0.50 to=0.80 adjust gamma=0.90 method=[Weighted Mean] block=2.05 c-value=4 despeckle remove fill outlier=0.5 show");
-		selectWindow("Mito thresholded_COMPARISON");
-		saveAs("TIFF", dir3 + "ThresholdPreview_" + title); 
-		close("ThresholdPreview_" + title);
-		close("Mito");
-		selectWindow("Mito thresholded");
-		getDimensions(width, height, channels, slices, frames);
-		if (slices > 1) {
-		    run("Stack to Images");
-		}
 	
-
-//For all binary images, run extended particle analyzer	
-for (j = nImages; j > 0; j--){
-	if (is( "binary" )) {
-			saveAs("TIFF", dir2 + "Binary_" + title + j + ".tif"); 
-			close();
-		}
+	// Check whether segmentation contains any foreground pixels
+	getHistogram(values, counts, 256);
+	
+	foregroundPixels = 0;
+	for (h = 1; h < 256; h++) {
+	    foregroundPixels += counts[h];
+	}
+	
+	if (foregroundPixels == 0) {
+	    print("WARNING: No mitochondria detected in " + title);
+	    logText += "FAILED: " + title + " - no foreground pixels detected\n";
+	
+	    close("Mito thresholded");
+	    if (isOpen("Mito thresholded_COMPARISON")) {
+	        close("Mito thresholded_COMPARISON");
+	    }
+	    if (isOpen("Mito")) {
+	        close("Mito");
+	    }
+	
+	    return;
+	}
+	
+	// Separate Z-stacks into individual binary image planes
+	getDimensions(width, height, channels, slices, frames);
+	if (slices > 1) {
+	    run("Stack to Images");
+	} 
+	 // Save each binary mitochondrial image for downstream morphology analysis
+	for (j = nImages; j > 0; j--){
+		if (is( "binary" )) {
+				saveAs("TIFF", dir2 + "Binary_" + baseTitle + j + ".tif"); 
+				close();
+			}
 	}	
 }
+
