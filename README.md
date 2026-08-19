@@ -1,4 +1,7 @@
 # Mitochondrial Morphology
+
+<a href="https://doi.org/10.5281/zenodo.22019444"><img src="https://zenodo.org/badge/1218626465.svg" alt="DOI"></a>
+
 FIJI (ImageJ) Macros to obtain Mito Morphology measurements. The macro is split into two parts. Part 1 makes mitochondrial images binary, and part 2 extracts area/perimeter/branch point etc measurements from each mitochondria and saves each image's results as a csv.
 
 ## How It Works
@@ -39,6 +42,9 @@ Mitochondria are segmented from the calibrated .tif images using adaptive thresh
 7. Test the selected parameters again on approximately five representative images from the dataset to confirm that they produce consistent segmentation across images.
 8. Once suitable parameters have been identified, use these settings for batch segmentation of the complete dataset.
 
+## Cite This Repository
+
+Zenodo: doi.org/10.5281/zenodo.22019444
 
 ## Feedback and Support
 If you encounter any issues or have suggestions, feel free to:
