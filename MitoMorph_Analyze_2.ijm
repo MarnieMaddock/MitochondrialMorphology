@@ -284,13 +284,22 @@ if (isOpen("Summary")) {
 
 // Combine all individual AP and Skeleton CSV files into
 // two dataset-level summary files for downstream classification
+// Combine all individual AP and Skeleton CSV files into
+// two dataset-level summary files for downstream classification
 function createSummaryFiles(resultsDir, summaryDir) {
 
     files = getFileList(resultsDir);
     files = Array.sort(files);
 
-    apSummary = "";
-    skeletonSummary = "";
+    apOutput = summaryDir + "AP_summary.csv";
+    skeletonOutput = summaryDir + "Skeleton_summary.csv";
+
+    // Remove old summary files if they already exist
+    if (File.exists(apOutput))
+        File.delete(apOutput);
+
+    if (File.exists(skeletonOutput))
+        File.delete(skeletonOutput);
 
     apHeaderAdded = false;
     skeletonHeaderAdded = false;
@@ -300,53 +309,60 @@ function createSummaryFiles(resultsDir, summaryDir) {
         fileName = files[f];
         fileLower = toLowerCase(fileName);
 
+        // ---------------------------------------------------------
         // Combine Analyze Particles CSV files
+        // ---------------------------------------------------------
         if (startsWith(fileName, "AP_") && endsWith(fileLower, ".csv")) {
-
+			 print("Adding to AP summary: " + fileName);
             text = File.openAsString(resultsDir + fileName);
-            lines = split(text, "\n");
 
             if (!apHeaderAdded) {
-                apSummary += lines[0] + "\n";
-                apHeaderAdded = true;
-            }
 
-            for (r = 1; r < lines.length; r++) {
-                if (lengthOf(lines[r]) > 0) {
-                    apSummary += lines[r] + "\n";
+                // First file: write header + data
+                File.saveString(text, apOutput);
+                apHeaderAdded = true;
+
+            } else {
+
+                // Subsequent files: remove header and append data
+                firstNewline = indexOf(text, "\n");
+
+                if (firstNewline >= 0) {
+                    body = substring(text, firstNewline + 1);
+
+                    if (lengthOf(body) > 0)
+                        File.append(body, apOutput);
                 }
             }
         }
 
+        // ---------------------------------------------------------
         // Combine Skeleton CSV files
+        // ---------------------------------------------------------
         if (startsWith(fileName, "skeleton_") && endsWith(fileLower, ".csv")) {
-
+			print("Adding to Skeleton summary: " + fileName);
             text = File.openAsString(resultsDir + fileName);
-            lines = split(text, "\n");
 
             if (!skeletonHeaderAdded) {
-                skeletonSummary += lines[0] + "\n";
-                skeletonHeaderAdded = true;
-            }
 
-            for (r = 1; r < lines.length; r++) {
-                if (lengthOf(lines[r]) > 0) {
-                    skeletonSummary += lines[r] + "\n";
+                // First file: write header + data
+                File.saveString(text, skeletonOutput);
+                skeletonHeaderAdded = true;
+
+            } else {
+
+                // Subsequent files: remove header and append data
+                firstNewline = indexOf(text, "\n");
+
+                if (firstNewline >= 0) {
+                    body = substring(text, firstNewline + 1);
+
+                    if (lengthOf(body) > 0)
+                        File.append(body, skeletonOutput);
                 }
             }
         }
     }
 
-    File.saveString(
-        apSummary,
-        summaryDir + "AP_summary.csv"
-    );
-
-    File.saveString(
-        skeletonSummary,
-        summaryDir + "Skeleton_summary.csv"
-    );
-
     print("Summary files saved to: " + summaryDir);
 }
-
