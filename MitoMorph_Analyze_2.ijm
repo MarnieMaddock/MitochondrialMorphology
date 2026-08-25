@@ -238,6 +238,14 @@ function processFile(dir1, dir2, file){
 	Table.deleteColumn("Median");
 	Table.deleteColumn("Skew");
 	Table.deleteColumn("Kurt");
+	Table.deleteColumn("FeretX");
+	Table.deleteColumn("FeretY");
+	Table.deleteColumn("FeretAngle");
+	Table.deleteColumn("XM");
+	Table.deleteColumn("YM");
+	Table.deleteColumn("BX");
+	Table.deleteColumn("BY");
+	Table.deleteColumn("Angle");
 	Table.update;
 	wait(30);
 	
