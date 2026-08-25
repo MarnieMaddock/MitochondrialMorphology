@@ -135,18 +135,20 @@ function processFile(dir1, dir2, file){
 	IJ.renameResults("Skeleton results");
 	wait(1000);
 	// Add source image label to each row of the skeleton results	
-	nRows = Table.size("Skeleton results");
+	nRowsSkeleton = Table.size("Skeleton results");
 	
-	for (r = 0; r < nRows; r++) {
+	for (r = 0; r < nRowsSkeleton; r++) {
 	    Table.set("Label", r, baseTitle, "Skeleton results");
 	}
 	
 	Table.update("Skeleton results");
-	wait(500);
+	wait(400);
 	// Save skeleton-derived measurements
 	saveAs("Results", dir2 + "skeleton_" + baseTitle +".csv"); 
 	wait(1000);
 	
+	// Explicitly return to the labelled skeleton image
+	selectWindow(title3);
 	// Generate an ROI corresponding to each labelled skeleton
 	run("Select All");
 	getStatistics(area, mean, min, max, std, histogram);
@@ -162,6 +164,11 @@ function processFile(dir1, dir2, file){
 	//selectWindow("ROI Manager");
 	wait(500);
 	roiManager("Save", dir3 + "Skeleton_ROI_" + baseTitle + ".zip"); 
+	
+	//reset
+	roiManager("reset");
+	roiManager("Show None");
+
 	selectWindow(title3);
 	saveAs("Tiff", dir3 + "Skeleton_image_" + baseTitle + ".tif");
 
@@ -179,6 +186,36 @@ function processFile(dir1, dir2, file){
 	run("Analyze Particles...", "  show=[Count Masks] display clear summarize add");
 	wait(500);
 	
+	// Give the AP Results table a unique name immediately
+	IJ.renameResults("AP results");
+	
+	nRowsAP = Table.size("AP results");
+	nAPROIs = roiManager("count");
+	
+	print(
+	    "QC: " + baseTitle +
+	    " | Skeleton=" + nRowsSkeleton +
+	    " | AP results=" + nRowsAP +
+	    " | AP ROIs=" + nAPROIs
+	);
+	
+	if (nRowsAP != nRowsSkeleton) {
+	    exit(
+	        "ERROR: AP/Skeleton mismatch for " +
+	        baseTitle +
+	        " | Skeleton=" + nRowsSkeleton +
+	        " | AP=" + nRowsAP
+	    );
+	}
+	
+	if (nRowsAP != nAPROIs) {
+	    exit(
+	        "ERROR: AP Results/ROI mismatch for " +
+	        baseTitle +
+	        " | Results=" + nRowsAP +
+	        " | ROIs=" + nAPROIs
+	    );
+	}
 	// -------------------------------------------------------------------------
 	// Match each mitochondrial object to its corresponding skeleton
 	// -------------------------------------------------------------------------
@@ -192,13 +229,16 @@ function processFile(dir1, dir2, file){
 	}
 
 	// Append the corresponding Skeleton ID to each mitochondrial object
-	selectWindow("Results");
-	Table.setColumn( "Skeleton ID", skeletonIDs);
+	// Return explicitly to the AP results table
+	selectWindow("AP results");
+	
+	Table.setColumn("Skeleton ID", skeletonIDs);
 	Table.update;
 	wait(30);
 		
 	// Calculate elongation as the inverse of circularity
-	nRowsAP = nResults;
+	selectWindow("AP results");
+	nRowsAP = Table.size("AP results");
 	
 	elongation = newArray(nRowsAP);
 	interconnectivity = newArray(nRowsAP);
@@ -248,10 +288,22 @@ function processFile(dir1, dir2, file){
 	Table.deleteColumn("Angle");
 	Table.update;
 	wait(30);
+	// -------------------------------------------------------------------------
+	// Final QC check before saving
+	// -------------------------------------------------------------------------
+	selectWindow("AP results");
 	
+	if (Table.size("AP results") != roiManager("count")) {
+	    exit(
+	        "ERROR: AP result/ROI mismatch before saving " +
+	        baseTitle
+	    );
+	}
+
 	// -------------------------------------------------------------------------
 	// Save individual mitochondrial measurements and quality-control outputs
 	// -------------------------------------------------------------------------
+	selectWindow("AP results");
 	saveAs("Results", dir2 + "AP_" + baseTitle +".csv");
 	selectWindow(title4);
 	roiManager("Save", dir3 + "AP_ROI_" + baseTitle + ".zip"); 
