@@ -183,7 +183,7 @@ function processFile(dir1, dir2, file){
 	// Measure geometric properties of each individual mitochondrial object
 	// Objects touching the image boundary are retained (exclude edges off)
 	run("Set Measurements...", "area mean standard modal min centroid center perimeter bounding fit shape feret's integrated median skewness kurtosis area_fraction limit display add redirect=None decimal=8");
-	run("Analyze Particles...", "  show=[Count Masks] display clear summarize add");
+	run("Analyze Particles...", "  show=[Count Masks] display clear add");
 	wait(500);
 	
 	// Give the AP Results table a unique name immediately
